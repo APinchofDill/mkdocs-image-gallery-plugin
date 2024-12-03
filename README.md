@@ -11,3 +11,5 @@ plugins:
       grid_class: "your-grid-class"  # Optional, CSS class for the grid container
       item_class: "your-item-class"  # Optional, CSS class for the grid items
 ```
+
+then use `{{image_grid}}` anywhere on your page to render the gallery. Simple.
