@@ -19,8 +19,8 @@ class ImageGalleryPlugin(BasePlugin):
         grid_class = self.config["grid_class"]
         item_class = self.config["item_class"]
 
-        # Regex to match both {{ image_grid }} and {{image_grid}}
-        placeholder_pattern = re.compile(r"\{\{\s*image_grid\s*\}\}")
+        # Regex to match both {{ image_gallery }} and {{image_gallery}}
+        placeholder_pattern = re.compile(r"\{\{\s*image_gallery\s*\}\}")
 
         # Check if the placeholder exists
         if not placeholder_pattern.search(markdown):
