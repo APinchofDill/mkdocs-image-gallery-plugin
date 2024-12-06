@@ -1,0 +1,19 @@
+.image-gallery {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.gallery-category img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+    /* border-radius: 0.25rem; */
+}
+
+.gallery-category {
+    flex: 1 1 calc(50% - 0.4rem);
+    max-width: calc(50% - 0.4rem);
+    overflow: hidden;
+}
