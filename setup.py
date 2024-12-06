@@ -21,6 +21,10 @@ setup(
         "mkdocs>=1.4.1"
     ],
     packages=find_packages(),
+    data_files=[
+        ('', ['mkdocs_image_gallery_plugin/assets/css/styles.css']),
+    ],
+    include_package_data=True,
     entry_points={
         "mkdocs.plugins": [
             "image-gallery = mkdocs_image_gallery_plugin.plugin:ImageGalleryPlugin",

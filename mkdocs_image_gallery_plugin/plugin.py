@@ -27,10 +27,10 @@ class ImageGalleryPlugin(BasePlugin):
 
         # CSS stuff
         css_file_path = os.path.join(os.path.dirname(__file__), "assets", "css", "styles.css")
+
         if os.path.exists(css_file_path):
             # Add CSS file to extra_css array in active config
             config['extra_css'] = config.get('extra_css', [])
-
             config['extra_css'].append(f"assets/stylesheets/image-gallery.css")
 
             self.css_file = css_file_path
