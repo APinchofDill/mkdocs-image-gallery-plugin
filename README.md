@@ -8,8 +8,12 @@ Add this plugin to your mkdocs.yml configuration as follows:
 plugins:
   - image-gallery:
       image_folder: "./assets/images/gallery"  # Folder in the docs directory containing images
-      grid_class: "your-grid-class"  # Optional, CSS class for the grid container
-      item_class: "your-item-class"  # Optional, CSS class for the grid items
 ```
 
 then use `{{image_gallery}}` anywhere on your page to render the gallery. Simple.
+
+## The Future
+
+More customization options coming.
+
+This plugin requires `glightbox` plugin to be enabled in material docs.

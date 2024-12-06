@@ -169,7 +169,7 @@ class ImageGalleryPlugin(BasePlugin):
         
         pages_template = Template('''<div class="image-gallery-page-container">
         {% for category in categories %}
-            <h1>{{ category.name }}</h1>
+            <h1 id="{{category.name}}">{{ category.name }}</h1>
             <div class="category-images">
                 {% for image in category.images %}
                     <img src="{{ image }}" alt="">
@@ -187,7 +187,7 @@ class ImageGalleryPlugin(BasePlugin):
         gallery_template = Template('''<div class="image-gallery">
         {% for category in categories %}
             <div class="gallery-category">
-                <div class="header"> <h2>{{ category.name }}</h2> <a href="#todo-add-image-gallery-link" class="see-all-link">View All</a> </div>
+                <div class="header"> <h2>{{ category.name }}</h2> <a href="{{site_url}}image-gallery.html#{{ category.name }}" class="see-all-link">View All</a> </div>
                 <a href="{{ category.name }}.html">
                     <img src="{{ category.thumbnail }}" alt="{{ category.name }}">
                 </a>
@@ -195,4 +195,4 @@ class ImageGalleryPlugin(BasePlugin):
         {% endfor %}
         </div>''')
 
-        return gallery_template.render(categories=self.categories)
+        return gallery_template.render(site_url = self.config['site_url'], categories=self.categories)
