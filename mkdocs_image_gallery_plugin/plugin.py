@@ -18,12 +18,22 @@ class ImageGalleryPlugin(BasePlugin):
         self.config = None
         self.valid_extensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
         self.categories = None
+        self.gallery_markdown_path = None
+        self.gallery_markdown_name = None
+        self.use_server_urls = None
+        self.docs_path = None
+        self.gallery_preview_pattern = None
+        self.gallery_pattern = None
 
     def on_config(self, config):
         """ Set the image folder path and asset file paths. """
+
         self.image_folder_raw = self.config['image_folder']
         self.image_folder = folder_path = os.path.join(config["docs_dir"], self.config['image_folder'])
-        self.config = config
+
+        # get the use_directory_urls config for  url routing
+        self.use_server_urls = config["use_directory_urls"]
+        self.docs_path = config["docs_dir"]
 
         # CSS stuff
         css_file_path = os.path.join(os.path.dirname(__file__), "assets", "css", "styles.css")
@@ -37,27 +47,35 @@ class ImageGalleryPlugin(BasePlugin):
         else:
             print(f"Warning: CSS file not found at {css_file_path}")
 
+        self.config = config
         return config
 
     def on_pre_build(self, config):
         """ Create the new page before the build process starts. """
-        docs_dir = config["docs_dir"]
-        page_name = "image-gallery.md"
-        page_path = os.path.join(docs_dir, page_name)
 
-        # Write the content to the new page file
-        with open(page_path, "w") as f:
-            f.write("{{generated_gallery}}")
-        
-        # Add the new page to the navigation
-        new_page_nav = {
-            "Image Gallery": page_name
-        }
+        # Define patterns for placeholders
+        self.gallery_preview_pattern = re.compile(r"\{\{\s*gallery_preview\s*\}\}")
+        self.gallery_pattern = re.compile(r"\{\{\s*gallery_html\s*\}\}")
+        # Get the path of gallery
+        self.gallery_markdown_path = self.find_first_markdown_with_pattern(config["docs_dir"], self.gallery_pattern)
+        # Get the name of the page
+        self.gallery_markdown_name = Path(self.gallery_markdown_path).name.rsplit('.', 1)[0]
 
-        if "nav" in config:
-            config["nav"].append(new_page_nav)
-        else:
-            config["nav"] = [new_page_nav]
+    def find_first_markdown_with_pattern(self, directory, pattern):
+        """ Find the first markdown file that matches the pattern. """
+
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if file.endswith(".md"):  # Check if the file is a markdown file
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            if pattern.search(content):
+                                return file_path  # Return the file path immediately
+                    except Exception as e:
+                        print(f"Error reading {file_path}: {e}")
+        return None  # Return None if no file matches the pattern
 
     def on_post_build(self, config):
         """ Copy the CSS file into the assets/css directory. """
@@ -86,25 +104,25 @@ class ImageGalleryPlugin(BasePlugin):
     def on_page_markdown(self, markdown, page, config, files):
         """ Find and replace the placeholder with the gallery HTML. """
 
-        inline_parent_pattern = re.compile(r"\{\{\s*image_gallery\s*\}\}")
-        generate_gallery_pattern = re.compile(r"\{\{\s*generated_gallery\s*\}\}")
-        
+        # Get the categories
         self.categories = self.get_categories()
 
-        if generate_gallery_pattern.search(markdown):
-            gallery_html = self.render_page_gallery()
-            return generate_gallery_pattern.sub(f"\n\n{gallery_html}\n\n", markdown)
+        # Check if the placeholder {{gallery_html}} exists if not return the markdown as is
+        if self.gallery_pattern.search(markdown):
+            gallery_html = self.render_page_gallery(page)
+            return self.gallery_pattern.sub(f"\n\n{gallery_html}\n\n", markdown)
 
-        # Check if the placeholder {{image_gallery}} exists if not return the markdown as is
-        if inline_parent_pattern.search(markdown):
-            gallery_preview = self.generate_gallery_html()
-            return inline_parent_pattern.sub(f"\n\n{gallery_preview}\n\n", markdown)
+        # Check if the placeholder {{gallery_preview}} exists if not return the markdown as is
+        if self.gallery_preview_pattern.search(markdown):
+            gallery_preview = self.render_gallery_preview(page)
+            return self.gallery_preview_pattern.sub(f"\n\n{gallery_preview}\n\n", markdown)
 
         return markdown
 
     def get_categories(self):
         """ Get the list of categories in the image folder. """
 
+        # Get all folders in the image folder and thumbnail
         categories = []
         for folder in sorted(Path(self.image_folder).iterdir()):
             if folder.is_dir():
@@ -118,18 +136,10 @@ class ImageGalleryPlugin(BasePlugin):
 
         return categories
 
-    def generate_gallery_html(self):
-        """ Generate the categories object. """
-
-        if not os.path.exists(self.image_folder):
-            return "<p>Error: Image folder does not exist.</p>"
-
-        return self.render_gallery()
-
     def get_web_Safe_image(self, site_url, file_location):
         """ Get the web-safe image path. """
 
-        return os.path.join(site_url, self.image_folder_raw, Path(file_location).parent.name, Path(file_location).name).replace('\\', '/')
+        return os.path.join(site_url, self.image_folder_raw, Path(file_location).parent.name, Path(file_location).name).replace(os.path.sep, '/')
 
     def find_thumbnail(self, folder_path):
         """ Find the thumbnail image in the folder. """
@@ -164,9 +174,9 @@ class ImageGalleryPlugin(BasePlugin):
 
         return formatted_images
 
-    def render_page_gallery(self):
+    def render_page_gallery(self, page):
         """ Render the gallery HTML using Jinja2. """
-        
+
         pages_template = Template('''<div class="image-gallery-page-container">
         {% for category in categories %}
             <h1 id="{{category.name}}">{{ category.name }}</h1>
@@ -181,13 +191,31 @@ class ImageGalleryPlugin(BasePlugin):
         return pages_template.render(categories=self.categories)
 
 
-    def render_gallery(self):
+    def render_gallery_preview(self, page):
         """ Render the gallery HTML using Jinja2. """
+
+        root_url = None
+
+        if not os.path.exists(self.image_folder):
+            return "<p>Error: Image folder does not exist.</p>"
+
+        # Get the relative path
+        relative_path = os.path.relpath(self.gallery_markdown_path, self.docs_path)
+        folders_between = f"{os.path.dirname(relative_path).replace(os.path.sep, '/')}" # make it web safe
+        if folders_between:
+            folders_between = f"{folders_between}/"
+
+        # use_directory_urls True = server / False = local .html
+        site_url = self.config["site_url"]
+        if self.use_server_urls:
+            root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}/#/"
+        else:
+            root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}.html#"
 
         gallery_template = Template('''<div class="image-gallery">
         {% for category in categories %}
             <div class="gallery-category">
-                <div class="header"> <h2>{{ category.name }}</h2> <a href="{{site_url}}image-gallery.html#{{ category.name }}" class="see-all-link">View All</a> </div>
+                <div class="header"> <h2>{{ category.name }}</h2> <a href="{{root_url}}{{ category.name }}" class="see-all-link">View All</a> </div>
                 <a href="{{ category.name }}.html">
                     <img src="{{ category.thumbnail }}" alt="{{ category.name }}">
                 </a>
@@ -195,4 +223,4 @@ class ImageGalleryPlugin(BasePlugin):
         {% endfor %}
         </div>''')
 
-        return gallery_template.render(site_url = self.config['site_url'], categories=self.categories)
+        return gallery_template.render(root_url=root_url, categories=self.categories)
