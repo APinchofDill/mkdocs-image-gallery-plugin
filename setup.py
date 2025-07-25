@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mkdocs-image-gallery-plugin",
-    version="1.1.1",
+    version="1.2.6",
     description="An MkDocs plugin to generate an image gallery from a folder of images",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

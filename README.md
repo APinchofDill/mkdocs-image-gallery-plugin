@@ -9,6 +9,7 @@ Add this plugin to your mkdocs.yml configuration as follows:
 plugins:
   - image-gallery:
       image_folder: "./assets/images/gallery"  # Folder in the docs directory containing images
+      separate_category_pages: false  # Optional: Set to true to create separate pages for each category
 ```
 
 ## Short Code Usage
@@ -33,6 +34,28 @@ Example:
 nav:
   - Gallery: gallery.md
 ```
+
+## Configuration Options
+
+### image_folder
+The path to the folder containing your gallery images, relative to the docs directory. Each subfolder in this directory will be treated as a separate category.
+
+### separate_category_pages
+When set to `true`, the plugin will create separate pages for each category instead of displaying all categories on a single page. This is useful for large galleries with many images.
+
+- Default: `false`
+- When enabled:
+  - The main gallery page will show a list of categories with links to individual category pages
+  - Each category will have its own page with all images from that category
+  - The gallery preview will link directly to these separate category pages
+
+## Features
+
+### Lazy Loading with Skeleton Loaders
+The gallery includes built-in lazy loading for all images, which improves page load performance. Images are loaded only when they come into view, and a smooth skeleton loader animation is displayed while images are loading.
+
+### Separate Category Pages
+When set to `true`, the plugin will create separate pages for each category instead of displaying all categories on a single page. This is useful for large galleries with many images.
 
 ## The Future
 

@@ -9,6 +9,7 @@ from pathlib import Path
 class ImageGalleryPlugin(BasePlugin):
     config_scheme = (
         ('image_folder', Type(str, required=True)),
+        ('separate_category_pages', Type(bool, default=False)),
     )
 
     def __init__(self):
@@ -24,12 +25,17 @@ class ImageGalleryPlugin(BasePlugin):
         self.docs_path = None
         self.gallery_preview_pattern = None
         self.gallery_pattern = None
+        self.separate_category_pages = None
+        self.category_pages = {}
 
     def on_config(self, config):
         """ Set the image folder path and asset file paths. """
 
         self.image_folder_raw = self.config['image_folder']
         self.image_folder = folder_path = os.path.join(config["docs_dir"], self.config['image_folder'])
+        
+        # Get the separate_category_pages config option
+        self.separate_category_pages = self.config.get('separate_category_pages', False)
 
         # get the use_directory_urls config for  url routing
         self.use_server_urls = config["use_directory_urls"]
@@ -60,6 +66,51 @@ class ImageGalleryPlugin(BasePlugin):
         self.gallery_markdown_path = self.find_first_markdown_with_pattern(config["docs_dir"], self.gallery_pattern)
         # Get the name of the page
         self.gallery_markdown_name = Path(self.gallery_markdown_path).name.rsplit('.', 1)[0]
+        
+        # Get the categories
+        self.categories = self.get_categories()
+        
+        # If separate category pages are enabled, generate them
+        if self.separate_category_pages:
+            self.generate_category_pages(config)
+            
+    def generate_category_pages(self, config):
+        """ Generate separate markdown files for each category. """
+        
+        # Get the directory of the gallery markdown file
+        gallery_dir = os.path.dirname(self.gallery_markdown_path)
+        
+        # Create a directory for category pages if it doesn't exist
+        category_dir = os.path.join(gallery_dir, "categories")
+        os.makedirs(category_dir, exist_ok=True)
+        
+        # Generate a markdown file for each category
+        for category in self.categories:
+            # Create the filename for the category page
+            category_filename = f"{category['name'].lower().replace(' ', '_')}.md"
+            category_path = os.path.join(category_dir, category_filename)
+            
+            # Generate the content for the category page
+            content = f"# {category['name']}\n\n{{{{category_{category['name']}}}}}\n"
+            
+            # Write the content to the file
+            with open(category_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # Calculate the URL for the category page
+            if self.use_server_urls:
+                page_url = f"{self.config['site_url']}categories/{category_filename.rsplit('.', 1)[0]}/"
+            else:
+                page_url = f"{self.config['site_url']}categories/{category_filename}"
+                
+            # Add the page URL to the category object
+            category['page_url'] = page_url
+            
+            # Store the category page info for later use
+            self.category_pages[category['name']] = {
+                'path': category_path,
+                'url': page_url
+            }
 
     def find_first_markdown_with_pattern(self, directory, pattern):
         """ Find the first markdown file that matches the pattern. """
@@ -92,30 +143,30 @@ class ImageGalleryPlugin(BasePlugin):
         else:
             print(f"Warning: CSS file not found at {self.css_file}")
 
-    # def on_post_page(self, output_content, page, config):
-    #     """ Modify the HTML content of the page. """
-    #     # Return the unmodified or modified full HTML
-    #     return output_content
-
-    # def on_page_content(self, html, page, config, **kwargs):
-    #     """ HTML modifications """
-    #     return html
-
     def on_page_markdown(self, markdown, page, config, files):
         """ Find and replace the placeholder with the gallery HTML. """
 
-        # Get the categories
-        self.categories = self.get_categories()
+        # Get the categories if not already loaded
+        if self.categories is None:
+            self.categories = self.get_categories()
 
-        # Check if the placeholder {{gallery_html}} exists if not return the markdown as is
+        # Check if the placeholder {{gallery_html}} exists
         if self.gallery_pattern.search(markdown):
             gallery_html = self.render_page_gallery(page)
             return self.gallery_pattern.sub(f"\n\n{gallery_html}\n\n", markdown)
 
-        # Check if the placeholder {{gallery_preview}} exists if not return the markdown as is
+        # Check if the placeholder {{gallery_preview}} exists
         if self.gallery_preview_pattern.search(markdown):
             gallery_preview = self.render_gallery_preview(page)
             return self.gallery_preview_pattern.sub(f"\n\n{gallery_preview}\n\n", markdown)
+            
+        # Check for category page placeholders
+        if self.separate_category_pages:
+            for category in self.categories:
+                category_pattern = re.compile(r"\{\{\s*category_" + category['name'] + r"\s*\}\}")
+                if category_pattern.search(markdown):
+                    category_html = self.render_category_page(category)
+                    return category_pattern.sub(f"\n\n{category_html}\n\n", markdown)
 
         return markdown
 
@@ -177,50 +228,106 @@ class ImageGalleryPlugin(BasePlugin):
     def render_page_gallery(self, page):
         """ Render the gallery HTML using Jinja2. """
 
-        pages_template = Template('''<div class="image-gallery-page-container">
-        {% for category in categories %}
-            <h1 id="{{category.name}}">{{ category.name }}</h1>
-            <div class="category-images">
-                {% for image in category.images %}
-                    <img src="{{ image }}" alt="">
-                {% endfor %}
-            </div>
-        {% endfor %}
-        </div>''')
+        # If separate category pages are enabled, only show a list of categories with links
+        if self.separate_category_pages:
+            pages_template = Template('''<div class="image-gallery">
+            {% for category in categories %}
+                <div class="gallery-category">
+                    <div class="header"> <h2>{{ category.name }}</h2> <a href="{{ category.page_url }}" class="see-all-link">View All</a> </div>
+                    <a href="{{ category.page_url }}">
+                        <div class="image-wrapper">
+                            <div class="skeleton-loader"></div>
+                            <img src="{{ category.thumbnail }}" alt="{{ category.name }}" loading="lazy" class="gallery-image" onload="this.classList.add('loaded')">
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+            </div>''')
+        else:
+            pages_template = Template('''<div class="image-gallery-page-container">
+            {% for category in categories %}
+                <h1 id="{{category.name}}">{{ category.name }}</h1>
+                <div class="category-images">
+                    {% for image in category.images %}
+                        <div class="image-wrapper">
+                            <div class="skeleton-loader"></div>
+                            <img src="{{ image }}" alt="" loading="lazy" class="gallery-image" onload="this.classList.add('loaded')">
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            </div>''')
 
         return pages_template.render(categories=self.categories)
+        
+    def render_category_page(self, category):
+        """ Render a single category page. """
+        
+        category_template = Template('''<div class="image-gallery-page-container">
+        <div class="category-images">
+            {% for image in category.images %}
+                <div class="image-wrapper">
+                    <div class="skeleton-loader"></div>
+                    <img src="{{ image }}" alt="" loading="lazy" class="gallery-image" onload="this.classList.add('loaded')">
+                </div>
+            {% endfor %}
+        </div>
+        </div>''')
+        
+        return category_template.render(category=category)
 
 
     def render_gallery_preview(self, page):
         """ Render the gallery HTML using Jinja2. """
 
-        root_url = None
-
         if not os.path.exists(self.image_folder):
             return "<p>Error: Image folder does not exist.</p>"
 
-        # Get the relative path
-        relative_path = os.path.relpath(self.gallery_markdown_path, self.docs_path)
-        folders_between = f"{os.path.dirname(relative_path).replace(os.path.sep, '/')}" # make it web safe
-        if folders_between:
-            folders_between = f"{folders_between}/"
-
-        # use_directory_urls True = server / False = local .html
-        site_url = self.config["site_url"]
-        if self.use_server_urls:
-            root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}/#/"
+        # Different templates based on whether separate category pages are enabled
+        if self.separate_category_pages:
+            gallery_template = Template('''<div class="image-gallery">
+            {% for category in categories %}
+                <div class="gallery-category">
+                    <div class="header"> <h2>{{ category.name }}</h2> <a href="{{ category.page_url }}" class="see-all-link">View All</a> </div>
+                    <a href="{{ category.page_url }}">
+                        <div class="image-wrapper">
+                            <div class="skeleton-loader"></div>
+                            <img src="{{ category.thumbnail }}" alt="{{ category.name }}" loading="lazy" class="gallery-image" onload="this.classList.add('loaded')">
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+            </div>''')
+            
+            return gallery_template.render(categories=self.categories)
         else:
-            root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}.html#"
-
-        gallery_template = Template('''<div class="image-gallery">
-        {% for category in categories %}
-            <div class="gallery-category">
-                <div class="header"> <h2>{{ category.name }}</h2> <a href="{{root_url}}{{ category.name }}" class="see-all-link">View All</a> </div>
-                <a href="{{ category.name }}.html">
-                    <img src="{{ category.thumbnail }}" alt="{{ category.name }}">
-                </a>
-            </div>
-        {% endfor %}
-        </div>''')
-
-        return gallery_template.render(root_url=root_url, categories=self.categories)
+            root_url = None
+            
+            # Get the relative path
+            relative_path = os.path.relpath(self.gallery_markdown_path, self.docs_path)
+            folders_between = f"{os.path.dirname(relative_path).replace(os.path.sep, '/')}" # make it web safe
+            if folders_between:
+                folders_between = f"{folders_between}/"
+    
+            # use_directory_urls True = server / False = local .html
+            site_url = self.config["site_url"]
+            if self.use_server_urls:
+                root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}/#"
+            else:
+                root_url = f"{site_url}{folders_between}{self.gallery_markdown_name}.html#"
+    
+            gallery_template = Template('''<div class="image-gallery">
+            {% for category in categories %}
+                <div class="gallery-category">
+                    <div class="header"> <h2>{{ category.name }}</h2> <a href="{{root_url}}{{ category.name }}" class="see-all-link">View All</a> </div>
+                    <a href="{{ category.name }}.html">
+                        <div class="image-wrapper">
+                            <div class="skeleton-loader"></div>
+                            <img src="{{ category.thumbnail }}" alt="{{ category.name }}" loading="lazy" class="gallery-image" onload="this.classList.add('loaded')">
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+            </div>''')
+    
+            return gallery_template.render(root_url=root_url, categories=self.categories)
