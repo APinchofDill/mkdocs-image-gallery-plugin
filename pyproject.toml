@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mkdocs-image-gallery-plugin"
+version = "1.2.7"
+description = "An MkDocs plugin to generate an image gallery from a folder of images"
+readme = "README.md"
+authors = [
+    {name = "APinchofDill"}
+]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+keywords = ["mkdocs", "image", "gallery"]
+requires-python = ">=3.8"
+dependencies = [
+    "jinja2>=3.1.4",
+    "mkdocs>=1.4.1"
+]
+
+[project.urls]
+Homepage = "https://github.com/APinchofDill/mkdocs-image-gallery-plugin"
+
+[project.entry-points."mkdocs.plugins"]
+"image-gallery" = "mkdocs_image_gallery_plugin.plugin:ImageGalleryPlugin"
+
+[tool.setuptools]
+packages = ["mkdocs_image_gallery_plugin", "mkdocs_image_gallery_plugin.assets", "mkdocs_image_gallery_plugin.assets.css"]
+include-package-data = true
