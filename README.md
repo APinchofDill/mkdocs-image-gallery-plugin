@@ -68,6 +68,10 @@ This plugin requires `glightbox` plugin to display clicked images in a lightbox.
 
 `pip install mkdocs-glightbox`
 
+### MkDocs Serve Compatibility
+
+When using `mkdocs serve` with `separate_category_pages: true`, the plugin avoids regenerating category pages if they already exist. This prevents endless rebuild loops that could occur when the file watcher detects newly generated files.
+
 ## Server URLs
 
 Offline plugin causes .html in the gallery urls. This plugin supports both server urls and offline urls.

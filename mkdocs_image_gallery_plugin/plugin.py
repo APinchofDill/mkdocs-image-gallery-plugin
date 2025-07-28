@@ -84,18 +84,11 @@ class ImageGalleryPlugin(BasePlugin):
         category_dir = os.path.join(gallery_dir, "categories")
         os.makedirs(category_dir, exist_ok=True)
         
-        # Generate a markdown file for each category
+        # markdown file for each category
         for category in self.categories:
             # Create the filename for the category page
             category_filename = f"{category['name'].lower().replace(' ', '_')}.md"
             category_path = os.path.join(category_dir, category_filename)
-            
-            # Generate the content for the category page
-            content = f"# {category['name']}\n\n{{{{category_{category['name']}}}}}\n"
-            
-            # Write the content to the file
-            with open(category_path, 'w', encoding='utf-8') as f:
-                f.write(content)
             
             # Calculate the URL for the category page
             if self.use_server_urls:
@@ -111,6 +104,17 @@ class ImageGalleryPlugin(BasePlugin):
                 'path': category_path,
                 'url': page_url
             }
+            
+            # Skip file generation if it already exists to prevent endless rebuild loops in 'mkdocs serve'
+            if os.path.exists(category_path):
+                continue
+                
+            # Generate the content for the category page
+            content = f"# {category['name']}\n\n{{{{category_{category['name']}}}}}\n"
+            
+            # Write the content to the file
+            with open(category_path, 'w', encoding='utf-8') as f:
+                f.write(content)
 
     def find_first_markdown_with_pattern(self, directory, pattern):
         """ Find the first markdown file that matches the pattern. """
