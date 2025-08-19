@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mkdocs-image-gallery-plugin"
-version = "1.3.6.dev2"
+version = "1.3.6.dev4"
 description = "An MkDocs plugin to generate an image gallery from a folder of images"
 readme = "README.md"
 authors = [
