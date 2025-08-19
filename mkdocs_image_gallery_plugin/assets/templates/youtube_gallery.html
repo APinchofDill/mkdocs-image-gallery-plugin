@@ -1,0 +1,36 @@
+<div class="youtube-gallery-container">
+{% if has_categories %}
+    {% for category_name, videos in videos_by_category.items() %}
+        <h2 class="yt-category-title">{{ category_name }}</h2>
+        <div class="youtube-gallery">
+            {% for video in videos %}
+                <div class="yt-card" data-embed-url="{{ video.embed_url }}">
+                    <img class="yt-thumb" src="{{ video.thumbnail_url }}" alt="YouTube thumbnail" loading="lazy" />
+                    <div class="yt-overlay">
+                        <button type="button" class="yt-play" aria-label="Play video"></button>
+                    </div>
+                    <div class="yt-embed"></div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="youtube-gallery">
+        {% for video in videos %}
+            <div class="yt-card" data-embed-url="{{ video.embed_url }}">
+                <img class="yt-thumb" src="{{ video.thumbnail_url }}" alt="YouTube thumbnail" loading="lazy" />
+                <div class="yt-overlay">
+                    <button type="button" class="yt-play" aria-label="Play video"></button>
+                </div>
+                <div class="yt-embed"></div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+    <div class="yt-lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="yt-lightbox-content">
+            <button type="button" class="yt-lightbox-close" aria-label="Close video"></button>
+            <div class="yt-lightbox-embed"></div>
+        </div>
+    </div>
+</div>

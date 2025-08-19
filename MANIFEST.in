@@ -1,1 +1,3 @@
 include mkdocs_image_gallery_plugin/assets/css/*
+include mkdocs_image_gallery_plugin/assets/js/*
+include mkdocs_image_gallery_plugin/assets/templates/*
