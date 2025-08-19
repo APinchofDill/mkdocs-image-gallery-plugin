@@ -10,6 +10,7 @@ plugins:
   - image-gallery:
       image_folder: "./assets/images/gallery"  # Folder in the docs directory containing images
       separate_category_pages: false  # Optional: Set to true to create separate pages for each category
+      youtube_links_file: "youtube-links.yaml"  # Optional: Path (relative to docs/) for YouTube links
 ```
 
 ## Short Code Usage
@@ -22,7 +23,55 @@ Display Preview Gallery
 Display Full Gallery
 `{{gallery_html}}`
 
+Display Youtube Gallery
+`{{youtube_gallery}}`
+
 Simple.
+
+## YouTube Video Gallery
+
+Render a responsive YouTube video gallery from a YAML file in your `docs/` directory.
+
+- **Shortcode**: place `{{youtube_gallery}}` anywhere in your Markdown.
+- **Data source**: YAML file under `docs/` (default: `youtube-links.yaml`).
+- **Playback**: Built‑in lightbox opens an embedded YouTube player on click.
+
+### YAML formats (`docs/youtube-links.yaml`)
+
+- Flat list of links:
+
+```yaml
+- https://www.youtube.com/watch?v=dQw4w9WgXcQ
+- https://www.youtube.com/watch?v=ArOS-e2d-cM
+```
+
+- Categories mapping to lists of links:
+
+```yaml
+Rick Roll:
+- https://www.youtube.com/watch?v=dQw4w9WgXcQ
+IronMouse:
+- https://www.youtube.com/watch?v=ArOS-e2d-cM
+```
+
+### Assets
+
+The plugin automatically injects the required CSS and JS and copies them into the built site:
+
+- CSS: `assets/stylesheets/image-gallery.css`
+- JS: `assets/javascripts/youtube-gallery.js`
+
+No extra configuration is needed beyond the plugin config below.
+
+### Notes & limitations
+
+- Works with standard YouTube URLs (`watch`, `youtu.be`, `embed`, `shorts`). Invalid links are skipped.
+- No YouTube Data API usage; titles/metadata are not fetched.
+
+### youtube_links_file
+Path (relative to `docs_dir`) to the YAML file containing YouTube links. Supports either a flat list of links or a mapping of category names to lists of links.
+
+- Default: `youtube-links.yaml`
 
 ## Add to Main Nav
 
@@ -49,18 +98,8 @@ When set to `true`, the plugin will create separate pages for each category inst
   - Each category will have its own page with all images from that category
   - The gallery preview will link directly to these separate category pages
 
-## Features
-
-### Lazy Loading with Skeleton Loaders
-The gallery includes built-in lazy loading for all images, which improves page load performance. Images are loaded only when they come into view, and a smooth skeleton loader animation is displayed while images are loading.
-
-### Separate Category Pages
-When set to `true`, the plugin will create separate pages for each category instead of displaying all categories on a single page. This is useful for large galleries with many images.
-
-## The Future
-
-More customization options coming.
-
+### youtube_links_file
+Path to your youtube links `youtube-links.yaml`.
 
 ## Notes
 
