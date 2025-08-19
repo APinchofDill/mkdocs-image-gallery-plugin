@@ -1,13 +1,13 @@
 import os
 import re
-import logging
+# import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import yaml
 from jinja2 import Template
 
-log = logging.getLogger("mkdocs.plugins.image-gallery")
+# log = logging.getLogger("mkdocs.plugins.image-gallery")
 
 
 YOUTUBE_ID_REGEX = re.compile(
@@ -63,26 +63,26 @@ class YouTubeGallery:
         # Prefer a path relative to docs_dir
         candidate = os.path.join(self.docs_dir, self.youtube_links_file)
         if os.path.exists(candidate):
-            log.debug("[image-gallery] YouTube YAML resolved (docs_dir-relative): %s", candidate)
+            # log.debug("[image-gallery] YouTube YAML resolved (docs_dir-relative): %s", candidate)
             return candidate
         # Fallback: absolute path if provided
         if os.path.isabs(self.youtube_links_file) and os.path.exists(self.youtube_links_file):
-            log.debug("[image-gallery] YouTube YAML resolved (absolute): %s", self.youtube_links_file)
+            # log.debug("[image-gallery] YouTube YAML resolved (absolute): %s", self.youtube_links_file)
             return self.youtube_links_file
-        log.info("[image-gallery] No YouTube YAML found at %s or absolute %s", candidate, self.youtube_links_file)
+        # log.info("[image-gallery] No YouTube YAML found at %s or absolute %s", candidate, self.youtube_links_file)
         return None
 
     def load_data(self) -> YouTubeGalleryData:
         yaml_path = self._resolve_yaml_path()
         if not yaml_path or not os.path.exists(yaml_path):
-            log.info("[image-gallery] YouTube YAML missing; rendering empty gallery")
+            # log.info("[image-gallery] YouTube YAML missing; rendering empty gallery")
             return YouTubeGalleryData()
 
         try:
             with open(yaml_path, "r", encoding="utf-8") as f:
                 payload = yaml.safe_load(f) or {}
         except Exception as e:
-            log.error("[image-gallery] Failed to read/parse YAML %s: %s", yaml_path, e)
+            # log.error("[image-gallery] Failed to read/parse YAML %s: %s", yaml_path, e)
             return YouTubeGalleryData()
 
         # Two supported shapes:
@@ -90,7 +90,7 @@ class YouTubeGallery:
         # 2) Dict[str, List[str]] mapping category name -> list of links
         if isinstance(payload, list):
             links = [link for link in payload if isinstance(link, str)]
-            log.debug("[image-gallery] YouTube YAML shape: flat list with %d links", len(links))
+            # log.debug("[image-gallery] YouTube YAML shape: flat list with %d links", len(links))
             return YouTubeGalleryData(flat_links=links)
 
         if isinstance(payload, dict):
@@ -100,7 +100,7 @@ class YouTubeGallery:
                     continue
                 if isinstance(value, list):
                     categories[key] = [link for link in value if isinstance(link, str)]
-            log.debug("[image-gallery] YouTube YAML shape: %d categories", len(categories))
+            # log.debug("[image-gallery] YouTube YAML shape: %d categories", len(categories))
             return YouTubeGalleryData(categories=categories)
 
         return YouTubeGalleryData()
@@ -145,9 +145,11 @@ class YouTubeGallery:
         data = self.load_data()
         model = self.build_view_model(data)
         if model.get("has_categories"):
-            log.info("[image-gallery] Rendering YouTube gallery: %d categories", len(model.get("videos_by_category", {})))
+            # log.info("[image-gallery] Rendering YouTube gallery: %d categories", len(model.get("videos_by_category", {})))
+            pass
         else:
-            log.info("[image-gallery] Rendering YouTube gallery: %d videos", len(model.get("videos", [])))
+            # log.info("[image-gallery] Rendering YouTube gallery: %d videos", len(model.get("videos", [])))
+            pass
         return template.render(**model)
 
 

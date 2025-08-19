@@ -1,14 +1,14 @@
 import os
 import re
 import shutil
-import logging
+# import logging
 from mkdocs.plugins import BasePlugin
 from mkdocs.config.config_options import Type
 from jinja2 import Template
 from pathlib import Path
 from .youtube import YouTubeGallery
 
-log = logging.getLogger("mkdocs.plugins.image-gallery")
+# log = logging.getLogger("mkdocs.plugins.image-gallery")
 
 class ImageGalleryPlugin(BasePlugin):
     config_scheme = (
@@ -41,11 +41,11 @@ class ImageGalleryPlugin(BasePlugin):
 
         self.image_folder_raw = self.config['image_folder']
         self.image_folder = folder_path = os.path.join(config["docs_dir"], self.config['image_folder'])
-        log.info("[image-gallery] on_config: docs_dir=%s image_folder_raw=%s resolved_image_folder=%s", config.get("docs_dir"), self.image_folder_raw, self.image_folder)
+        # log.info("[image-gallery] on_config: docs_dir=%s image_folder_raw=%s resolved_image_folder=%s", config.get("docs_dir"), self.image_folder_raw, self.image_folder)
         
         # Get the separate_category_pages config option
         self.separate_category_pages = self.config.get('separate_category_pages', False)
-        log.debug("[image-gallery] separate_category_pages=%s", self.separate_category_pages)
+        # log.debug("[image-gallery] separate_category_pages=%s", self.separate_category_pages)
 
         # get the use_directory_urls config for  url routing
         self.use_server_urls = config["use_directory_urls"]
@@ -61,7 +61,8 @@ class ImageGalleryPlugin(BasePlugin):
 
             self.css_file = css_file_path
         else:
-            log.warning("[image-gallery] CSS file not found at %s", css_file_path)
+            # log.warning("[image-gallery] CSS file not found at %s", css_file_path)
+            pass
 
         # JavaScript for YouTube gallery
         js_file_path = os.path.join(os.path.dirname(__file__), "assets", "js", "youtube-gallery.js")
@@ -70,7 +71,8 @@ class ImageGalleryPlugin(BasePlugin):
             config['extra_javascript'].append("assets/javascripts/youtube-gallery.js")
             self.youtube_js_file = js_file_path
         else:
-            log.warning("[image-gallery] JS file not found at %s", js_file_path)
+            # log.warning("[image-gallery] JS file not found at %s", js_file_path)
+            pass
 
         self.config = config
         return config
@@ -82,16 +84,16 @@ class ImageGalleryPlugin(BasePlugin):
         self.gallery_preview_pattern = re.compile(r"\{\{\s*gallery_preview\s*\}\}")
         self.gallery_pattern = re.compile(r"\{\{\s*gallery_html\s*\}\}")
         self.youtube_gallery_placeholder = re.compile(r"\{\{\s*youtube_gallery\s*\}\}")
-        log.debug("[image-gallery] Patterns compiled: gallery_preview, gallery_html, youtube_gallery")
+        # log.debug("[image-gallery] Patterns compiled: gallery_preview, gallery_html, youtube_gallery")
         # Get the path of gallery
         self.gallery_markdown_path = self.find_first_markdown_with_pattern(config["docs_dir"], self.gallery_pattern)
         if self.gallery_markdown_path:
             # Get the name of the page
             self.gallery_markdown_name = Path(self.gallery_markdown_path).name.rsplit('.', 1)[0]
-            log.debug("[image-gallery] Found gallery_html in %s (name=%s)", self.gallery_markdown_path, self.gallery_markdown_name)
+            # log.debug("[image-gallery] Found gallery_html in %s (name=%s)", self.gallery_markdown_path, self.gallery_markdown_name)
         else:
             self.gallery_markdown_name = None
-            log.info("[image-gallery] No page with {{gallery_html}} found. This is OK if only YouTube or previews are used.")
+            # log.info("[image-gallery] No page with {{gallery_html}} found. This is OK if only YouTube or previews are used.")
         
         # Get the categories
         self.categories = self.get_categories()
@@ -162,7 +164,8 @@ class ImageGalleryPlugin(BasePlugin):
                             if pattern.search(content):
                                 return file_path  # Return the file path immediately
                     except Exception as e:
-                        log.error("[image-gallery] Error reading %s: %s", file_path, e)
+                        # log.error("[image-gallery] Error reading %s: %s", file_path, e)
+                        pass
         return None  # Return None if no file matches the pattern
 
     def on_post_build(self, config):
@@ -180,13 +183,15 @@ class ImageGalleryPlugin(BasePlugin):
         if os.path.exists(self.css_file):
             shutil.copy(self.css_file, os.path.join(target_css_dir, "image-gallery.css"))
         else:
-            log.warning("[image-gallery] CSS file not found at %s", self.css_file)
+            # log.warning("[image-gallery] CSS file not found at %s", self.css_file)
+            pass
 
         # Copy JS file to javascripts directory
         if self.youtube_js_file and os.path.exists(self.youtube_js_file):
             shutil.copy(self.youtube_js_file, os.path.join(target_js_dir, "youtube-gallery.js"))
         elif self.youtube_js_file:
-            log.warning("[image-gallery] JS file not found at %s", self.youtube_js_file)
+            # log.warning("[image-gallery] JS file not found at %s", self.youtube_js_file)
+            pass
 
     def on_page_markdown(self, markdown, page, config, files):
         """ Find and replace the placeholder with the gallery HTML. """
@@ -199,22 +204,23 @@ class ImageGalleryPlugin(BasePlugin):
 
         # Replace YouTube first so it doesn't get skipped if other placeholders also exist
         if self.youtube_gallery_placeholder.search(rendered):
-            log.info("[image-gallery] Replacing {{youtube_gallery}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
+            # log.info("[image-gallery] Replacing {{youtube_gallery}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
             if self.youtube_gallery:
                 yt_html = self.youtube_gallery.render_gallery_html()
                 rendered = self.youtube_gallery_placeholder.sub(f"\n\n{yt_html}\n\n", rendered)
             else:
-                log.error("[image-gallery] YouTubeGallery not initialized before on_page_markdown")
+                # log.error("[image-gallery] YouTubeGallery not initialized before on_page_markdown")
+                pass
 
         # Replace {{gallery_html}}
         if self.gallery_pattern.search(rendered):
-            log.info("[image-gallery] Replacing {{gallery_html}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
+            # log.info("[image-gallery] Replacing {{gallery_html}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
             gallery_html = self.render_page_gallery(page)
             rendered = self.gallery_pattern.sub(f"\n\n{gallery_html}\n\n", rendered)
 
         # Replace {{gallery_preview}}
         if self.gallery_preview_pattern.search(rendered):
-            log.info("[image-gallery] Replacing {{gallery_preview}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
+            # log.info("[image-gallery] Replacing {{gallery_preview}} on page: %s", getattr(page, 'file', getattr(page, 'title', 'unknown')))
             gallery_preview = self.render_gallery_preview(page)
             rendered = self.gallery_preview_pattern.sub(f"\n\n{gallery_preview}\n\n", rendered)
             
@@ -223,7 +229,7 @@ class ImageGalleryPlugin(BasePlugin):
             for category in self.categories:
                 category_pattern = re.compile(r"\{\{\s*category_" + category['name'] + r"\s*\}\}")
                 if category_pattern.search(markdown):
-                    log.info("[image-gallery] Replacing {{category_%s}} on page: %s", category['name'], getattr(page, 'file', getattr(page, 'title', 'unknown')))
+                    # log.info("[image-gallery] Replacing {{category_%s}} on page: %s", category['name'], getattr(page, 'file', getattr(page, 'title', 'unknown')))
                     category_html = self.render_category_page(category)
                     rendered = category_pattern.sub(f"\n\n{category_html}\n\n", rendered)
 
@@ -234,7 +240,7 @@ class ImageGalleryPlugin(BasePlugin):
 
         # If the configured image folder is missing, avoid crashing the build
         if not self.image_folder or not os.path.isdir(self.image_folder):
-            log.info("[image-gallery] Image folder missing or not a directory: %s (continuing without image categories)", self.image_folder)
+            # log.info("[image-gallery] Image folder missing or not a directory: %s (continuing without image categories)", self.image_folder)
             return []
 
         # Get all folders in the image folder and thumbnail
@@ -384,7 +390,7 @@ class ImageGalleryPlugin(BasePlugin):
                 # Fallback if the gallery page is not discovered
                 site_url = self.config["site_url"]
                 root_url = f"{site_url}#"
-                log.debug("[image-gallery] gallery_markdown_path not set; using fallback root_url=%s", root_url)
+                # log.debug("[image-gallery] gallery_markdown_path not set; using fallback root_url=%s", root_url)
 
             gallery_template = Template('''<div class="image-gallery">
             {% for category in categories %}
